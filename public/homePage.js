@@ -1,76 +1,58 @@
 'use strict'
-//Создайте объект класса LogoutButton. 
-class LogoutButton{
-    constructor (){
-//В свойство action запишите функцию, которая будет вызывать запрос деавторизации (logout).
-        this.action = function (logout){
-//В колбек запроса добавьте проверку: если запрос выполнился успешно, то обновите страницу
-            if(logout){
-                location.reload();
-            }
-        }
-    }
-//Выполните запрос на получение текущего пользователя (current)?
-//D колбеке которого проверьте ответ: если ответ успешный, то вызовите метод отображения данных профиля (ProfileWidget.showProfile) в который передавайте данные ответа от сервера.
-    gettingUserInformation(){
-        ApiConnector.current(callback) = () => ProfileWidget.showProfile(data);
-    }
 
-//Создайте объект типа RatesBoard.
-    RatesBoard() {
-//Напишите функцию, которая будет выполнять запрос получения курсов валют.
-//В случае успешного запроса, очищайте таблицу с данными (clearTable) и заполняйте её (fillTable) полученными данными.
-        ApiConnector.getStocks(callback) = () => clearTable() && fillTable(data);
-//Вызовите данную функцию для получения текущих валют.
-        RatesBoard();
-//Напишите интервал, который будет многократно выполняться (раз в минуту) и вызывать вашу функцию с получением валют.
-        setInterval(() => RatesBoard(), 1000);
-    }
+const { response } = require("express");
 
-//Создайте объект типа MoneyManager
-    MoneyManager(){
-//Запишите в свойство addMoneyCallback функцию, которая будет выполнять запрос.
-     addMoneyCallback = function(data){
-//Внутри функции выполните запрос на пополнение баланса (addMoney).
-        ApiConnector.addMoney({ currency, amount }, callback);
-//Используйте аргумент функции свойства addMoneyCallback для передачи данных data в запрос.
-        addMoneyCallback(data) = () => showProfile(data) && setMessage(isSuccess, message);
-    }
+let userForm = new UserForm();
 
-//Реализуйте конвертирование валюты
-    conversionMoneyCallback = function(data){
-        ApiConnector.convertMoney({ fromCurrency, targetCurrency, fromAmount }, callback);
-        conversionMoneyCallback(data) = () => showProfile(data) && setMessage(isSuccess, message);
-    }
+const loginResponseHandler = (response) => { response.success ? location.reload() : userForm.setLoginErrorMessage(response.error) };
+userForm.loginFormCallback = (data) => { ApiConnector.login(data, loginResponseHandler) };
 
-//Реализуйте перевод валюты
-    sendMoneyCallback = function(data){
-        ApiConnector.transferMoney({ to, currency, amount }, callback);
-        sendMoneyCallback(data) = () => showProfile(data) && setMessage(isSuccess, message);
-    }
+const registerResponseHandler = (response) => { response.success ? location.reload() : userForm.setRegisterErrorMessage(response.error) };
+userForm.registerFormCallback = (data) => { ApiConnector.register(data, registerResponseHandler) };
 
-    }
+const logoutButton = new LogoutButton();
+const logoutCallback = (response) => { response.success && location.reload() };
+logoutButton.action = () => { ApiConnector.logout(logoutCallback) };
 
-//Создайте объект типа FavoritesWidget
 
-    FavoritesWidget(){
-//Запросите начальный список избранного
-        ApiConnector.getFavorites(callback) = () => clearTable();
-        fillTable(data);
-        updateUsersList(data);
+const getCurrentCallback = (response) => { response.success && ProfileWidget.showProfile(response.data) };
+ApiConnector.current(getCurrentCallback);
 
-//Реализуйте добавления пользователя в список избранных
-        addUserCallback = function(data){
-            ApiConnector.addUserToFavorites({id, name}, callback);
-            addUserCallback(data) = () => clearTable() && fillTable(data) && updateUsersList(data) && setMessage(isSuccess, message);
 
-        }
+const moneyManager = new MoneyManager();
+const addMoneyCallback = (response) => { response.success && ProfileWidget.showProfile(response.data)};
+moneyManager.addMoneyCallback = (data) => { ApiConnector.addMoney(data, addMoneyCallback) };
 
-//Реализуйте удаление пользователя из избранного
-        removeUserCallback = function(data) {
-            ApiConnector.removeUserFromFavorites(id, callback);
-            removeUserFromFavorites(data) = () => clearTable() && fillTable(data) && updateUsersList(data) && setMessage(isSuccess, message);
+const conversionMoneyCallback = (response) => {response.success && ProfileWidget.showProfile(response.data)};
+moneyManager.conversionMoneyCallback = (data) => {ApiConnector.convertMoney(data, conversionMoneyCallback)};
 
-        }
+const sendMoneyCallback = (response) => {response.success && ProfileWidget.showProfile(response.data)};
+moneyManager.sendMoneyCallback = (data) => {ApiConnector.transferMoney(data, sendMoneyCallback)};
+
+
+const ratesBoard = new RatesBoard();
+const getExchangeRateCallback = response => {
+
+    if (response.success) {
+        
+        ratesBoard.clearTable();
+        ratesBoard.fillTable(response.data);
     }
 }
+setInterval(() => { ApiConnector.getStocks(getExchangeRateCallback) }, 1000);
+
+const favoritesWidget = new FavoritesWidget();
+const requestForListFavorites = response => {
+    if(response.success){
+        favoritesWidget.clearTable();
+        favoritesWidget.fillTable(response.data);
+        favoritesWidget.updateUsersList(response.data);
+    }
+ }
+ favoritesWidget.requestForListFavorites = (data) => {ApiConnector.getFavorites(data, requestForListFavorites)};
+
+ const addUserCallback = (response) => {response.success && };
+ favoritesWidget.addUserCallback = (data) => (ApiConnector.addUserToFavorites());
+
+ const removeUserCallback = (response) => {response.success && };
+ favoritesWidget.addUserToFavorites = (data) => (ApiConnector.removeUserFromFavorites());
